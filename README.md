@@ -3,12 +3,6 @@ modeler-mongodb
 
 MongoDB-powered functional entity system
 
-Deficiency
---
-Not a perfectly reliable insertion order.
-
-> This will return documents in the reverse of the order on disk. Typically, the order of documents on disks reflects insertion order, except when documents move internal because of document growth due to update operations.
-
 - - -
 
 ### Developed by [TerraEclipse](https://github.com/TerraEclipse)

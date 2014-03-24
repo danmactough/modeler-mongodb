@@ -25,11 +25,15 @@ module.exports = function (_opts) {
       cur.toArray(function (err, results) {
         if (err) return cb(err);
         skip += results.length;
-        cb(null, results, next);
+        cb(null, results.map(api._prepare), next);
       });
     })();
   }
 
+  api._prepare = function (entity) {
+    entity && (entity.id = entity._id) && delete entity._id;
+    return entity;
+  };
   api._head = function (skip, limit, cb) {
     continuable(skip, limit, false, cb);
   };
@@ -47,10 +51,12 @@ module.exports = function (_opts) {
     }
 
     function save () {
-      // We need to mirror id to _id
-      entity._id || (entity._id = entity.id);
-      collection.save(entity, function (err) {
-        cb(err, { _id: entity._id });
+      var saveEntity = api.copy(entity);
+      // We need to map `id` to `_id` and remove `id`
+      saveEntity._id = entity.id;
+      delete saveEntity.id;
+      collection.save(saveEntity, function (err) {
+        cb(err);
       });
     }
 
@@ -66,10 +72,13 @@ module.exports = function (_opts) {
     }
   };
   api._load = function (id, cb) {
-    collection.findOne({ id: id }, cb);
+    collection.findOne({ _id: id }, function (err, entity) {
+      if (err) return cb(err);
+      cb(err, api._prepare(entity));
+    });
   };
   api._destroy = function (id, cb) {
-    collection.remove({ id: id }, cb);
+    collection.remove({ _id: id }, cb);
   };
 
   return api;

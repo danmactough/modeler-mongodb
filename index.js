@@ -19,21 +19,17 @@ module.exports = function (_opts) {
 
   function continuable (skip, limit, reverse, cb) {
     (function next () {
-      var cur = collection.find().skip( skip ? skip : 0);
+      var cur = collection.find({}, { _id: 0, __idx: 0 }).skip( skip ? skip : 0);
       limit && cur.limit(limit);
       cur.sort({ "__idx": reverse ? -1 : 1 });
       cur.toArray(function (err, results) {
         if (err) return cb(err);
         skip += results.length;
-        cb(null, results.map(api._prepare), next);
+        cb(null, results, next);
       });
     })();
   }
 
-  api._prepare = function (entity) {
-    entity && (entity.id = entity._id) && delete entity._id;
-    return entity;
-  };
   api._head = function (skip, limit, cb) {
     continuable(skip, limit, false, cb);
   };
@@ -52,9 +48,11 @@ module.exports = function (_opts) {
 
     function save () {
       var saveEntity = api.copy(entity);
-      // We need to map `id` to `_id` and remove `id`
+      // We need `_id` to be the same as `id` because MongoDB and Modeler
+      // each have their own unique, completely inflexible requirements
       saveEntity._id = entity.id;
-      delete saveEntity.id;
+      // @todo consider performing a findAndModify using both
+      // id and rev in the query part where rev > 1
       collection.save(saveEntity, function (err) {
         cb(err);
       });
@@ -72,9 +70,9 @@ module.exports = function (_opts) {
     }
   };
   api._load = function (id, cb) {
-    collection.findOne({ _id: id }, function (err, entity) {
+    collection.findOne({ _id: id }, { _id: 0 }, function (err, entity) {
       if (err) return cb(err);
-      cb(err, api._prepare(entity));
+      cb(err, entity);
     });
   };
   api._destroy = function (id, cb) {

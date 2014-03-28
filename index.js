@@ -4,6 +4,8 @@ module.exports = function (_opts) {
   var api = modeler(_opts);
 
   if (!api.options.db) throw new Error('must pass a node-mongodb-native db with options.db');
+  api.options.sort = api.options.sort || '__idx';
+
   var db = api.options.db
     , collection = db.collection(api.options.name)
     , counter = db.collection('_counters')
@@ -19,9 +21,11 @@ module.exports = function (_opts) {
 
   function continuable (skip, limit, reverse, cb) {
     (function next () {
+      var sort = {};
+      sort[api.options.sort] = reverse ? -1 : 1;
       var cur = collection.find({}, { _id: 0, __idx: 0 }).skip( skip ? skip : 0);
       limit && cur.limit(limit);
-      cur.sort({ "__idx": reverse ? -1 : 1 });
+      cur.sort(sort);
       cur.toArray(function (err, results) {
         if (err) return cb(err);
         skip += results.length;

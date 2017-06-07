@@ -1,6 +1,8 @@
 modeler-mongodb
 ===============
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/danmactough/modeler-mongodb.svg)](https://greenkeeper.io/)
+
 MongoDB-powered functional entity system
 
 - - -
